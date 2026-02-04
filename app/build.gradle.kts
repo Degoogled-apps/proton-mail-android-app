@@ -26,7 +26,6 @@ plugins {
     kotlin("kapt")
     id("com.google.devtools.ksp")
     id("dagger.hilt.android.plugin")
-    id("io.sentry.android.gradle")
     id("org.jetbrains.kotlinx.kover")
     id("me.proton.core.gradle-plugins.environment-config") version libs.versions.proton.core.plugin.get()
     id("org.jetbrains.kotlin.plugin.compose")
@@ -61,8 +60,6 @@ android {
             apiPrefix = "mail-api"
         }
 
-        buildConfigField("String", "SENTRY_DSN", sentryDSN.toBuildConfigValue())
-        buildConfigField("String", "ACCOUNT_SENTRY_DSN", accountSentryDSN.toBuildConfigValue())
         buildConfigField("String", "RUST_SDK_VERSION", "\"${libs.versions.proton.rust.core.get()}\"")
 
         setAssetLinksResValue("proton.me")
@@ -242,9 +239,6 @@ dependencies {
     implementation(project(":uicomponents"))
     implementation(project(":design-system"))
     implementation(project(":presentation-compose"))
-
-    implementation(libs.play.review.core)
-    implementation(libs.play.review.ext)
 
     debugImplementation(libs.bundles.app.debug)
 

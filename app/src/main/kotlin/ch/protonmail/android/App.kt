@@ -30,7 +30,6 @@ import ch.protonmail.android.mailbugreport.domain.LogsExportFeatureSetting
 import ch.protonmail.android.mailbugreport.domain.annotations.LogsExportFeatureSettingValue
 import ch.protonmail.android.mailcommon.domain.benchmark.BenchmarkTracer
 import ch.protonmail.android.mailcrashrecord.domain.usecase.SaveMessageBodyWebViewCrash
-import ch.protonmail.android.mailnotifications.domain.FirebaseMessagingTokenLifecycleObserver
 import ch.protonmail.android.mailsession.data.initializer.DatabaseLifecycleObserver
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
@@ -51,9 +50,6 @@ internal class App : Application() {
 
     @Inject
     lateinit var databaseLifecycleObserver: Provider<DatabaseLifecycleObserver>
-
-    @Inject
-    lateinit var firebaseLifecycleObserver: Provider<FirebaseMessagingTokenLifecycleObserver>
 
     @Inject
     lateinit var eventLoopLifecycleObserver: Provider<RustEventLoopErrorLifecycleObserver>

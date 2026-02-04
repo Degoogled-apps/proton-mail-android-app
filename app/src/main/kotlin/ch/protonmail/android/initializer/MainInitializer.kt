@@ -44,7 +44,7 @@ class MainInitializer : Initializer<Unit> {
         private fun mailDependencies(): List<Class<out Initializer<*>?>> = emptyList()
 
         private fun releaseOnlyDependenciesIfNeeded() =
-            if (BuildConfig.DEBUG) emptyList() else listOf(SentryInitializer::class.java)
+            emptyList()
     }
 
     override fun create(context: Context) {
