@@ -75,7 +75,6 @@ internal class App : Application() {
 
         addLogsFileHandlerObserver()
         addDatabaseObserver()
-        addFirebaseTokenLifecycleObserver()
         addEventLoopObserver()
 
         benchmarkTracer.end()
@@ -89,10 +88,6 @@ internal class App : Application() {
 
     private fun addDatabaseObserver() {
         ProcessLifecycleOwner.get().lifecycle.addObserver(databaseLifecycleObserver.get())
-    }
-
-    private fun addFirebaseTokenLifecycleObserver() {
-        ProcessLifecycleOwner.get().lifecycle.addObserver(firebaseLifecycleObserver.get())
     }
 
     private fun addEventLoopObserver() {
