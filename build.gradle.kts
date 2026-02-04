@@ -26,8 +26,6 @@ buildscript {
         classpath(libs.android.tools.build)
         classpath(libs.kotlin.gradle)
         classpath(libs.hilt.android.gradle)
-        classpath(libs.google.services)
-        classpath(libs.sentry.gradle)
         classpath(libs.paparazzi.plugin)
     }
 }
