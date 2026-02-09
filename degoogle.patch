@@ -1,0 +1,1864 @@
+diff --git a/CONTRIBUTING.md b/CONTRIBUTING.md
+deleted file mode 100644
+index 630942fbb5..0000000000
+--- a/CONTRIBUTING.md
++++ /dev/null
+@@ -1,44 +0,0 @@
+-# ProtonMail contributions guidelines
+-
+-Every contribution to the project needs to follow some rules.
+-
+-**Team decisions are tracked in form of ADRs in /docs folder**
+-
+-### Planning
+-
+-Every significant change needs to be **discussed with the team** and go through a **planning process**; *this excludes minor contributions, simple bug fixes, or performance improvements that don't impact the app's behavior.*
+-
+-If the contribution is from a Proton member, the presence on the team daily standups is preferred.
+-
+-### Git best practices
+-
+-**Merge/Pull Requests must be of a reasonable size**, without exceeding the +**500 LOC**; more significant changes must be split on more separate Pull Requests or part of a feature branch.
+-
+-The **branch name** must include the **ticket(s) number** whenever possible, with the project prefix if not `MAILAND`, followed by a brief description of the change: e.g., `fix/123_crash-on-login` or `chore/L10N-234_capilalize-cancel-button`
+-
+-The **commit message** must be imperative and include a brief description if needed. The last line must include the whole ticket: e.g.
+-
+-```
+-Fix crash on login
+-
+-A network request was being launched on the Main thread,
+-now it has been moved inside a coroutine
+-
+-MAILAND-123
+-```
+-
+-### Architecture
+-
+-Every change must follow the target **architecture of the project**.
+-
+-### Tests
+-
+-We expect any change to be accompanied with an **appropriate suite of automated tests**.
+-
+-### Code style
+-
+-**Code style** must be compliant with **Kotlin/Android conventions** and follow the **internal rules** agreed by the team.
+-
+-**Installing the Detekt plugin is a must** as it helps to follow the defined rules naturally.
+-
+-<u>Merge/Pull Requests that introduce new Detekt issues won't be accepted.</u>
+diff --git a/README.md b/README.md
+index e6fbce1743..6f3eba55d1 100644
+--- a/README.md
++++ b/README.md
+@@ -1,57 +1 @@
+-Proton Mail for Android
+-=======================
+-Copyright (c) 2026 Proton Technologies AG
+-
+-## Contributing
+-We’ve recently rebuilt the app and are focused on our current roadmap of features and fixes. Therefore, we are not accepting new issues or PRs at the moment: feel free to fork the repo for your own experiments. We appreciate your understanding and support.
+-
+-## Build instructions
+-- Install and configure the environment (two options available)
+-  - [Android Studio bundle](https://developer.android.com/studio/install)
+-  - [Standalone Android tools](https://developer.android.com/tools)
+-- Install and configure Java 17+ (not needed for Android Studio bundle as it's included)
+-  - Install Java 17 with `brew install openjdk@17` | `apt install openjdk-17-jdk`
+-  - Set Java 17 as the current version by using the `JAVA_HOME` environment variable
+-- Clone this repository (Use `git clone git@github.com:ProtonMail/android-mail.git`.)
+-- Ensure [Git LFS](https://git-lfs.com/) is installed (`git lfs install`) for snapshot test assets
+-- Setup `google-services.json` file by running `./scripts/setup_google_services.sh`
+-- Build with any of the following:
+-  - Execute `./gradlew assembleAlphaDebug` in a terminal
+-  - Open Android Studio and build the `:app` module
+-
+-## CI / CD
+-CI stages are defined in the `.gitlab-ci.yml` file and we rely on [fastlane](https://docs.fastlane.tools/) to implement most of them.
+-Fastlane can be installed and used locally by performing
+-```
+-bundle install
+-```
+-(requires Ruby and `bundler` to be available locally)
+-```
+-bundle exec fastlane lanes
+-```
+-will show all the possible actions that are available.
+-
+-## Deploy
+-Each merge to `main` branch builds the branch's HEAD and deploys it
+-to [Firebase App Distribution](https://firebase.google.com/docs/app-distribution).
+-
+-## Observability
+-
+-We use **Sentry** for crash/error reporting (primarily for **non-debuggable** builds).
+-
+-- **Runtime crash/error reporting**: the DSN is injected at build time via environment variables (`SENTRY_DSN_MAIL` and
+-  `SENTRY_DSN_ACCOUNT`). If these variables are not set (typical for local builds and forks), Sentry is effectively
+-  disabled.
+-- **Mapping/symbol uploads (CI / release tasks)**: CI provides a `sentry.properties` file for uploading ProGuard/R8
+-  mappings and native symbols.
+-
+-## Code style
+-
+-This project's code style and formatting is checked by detekt. The rule set
+-is [ktlint's default one](https://github.com/pinterest/ktlint).
+-
+-License
+--------
+-The code and data files in this distribution are licensed under the terms of the GPLv3 as published by the Free Software
+-Foundation. See [the GPLv3 license text](https://www.gnu.org/licenses/) for a copy of this license.
+-
++# Proton Mail (degoogled)
+diff --git a/app/build.gradle.kts b/app/build.gradle.kts
+index d0e7d72714..7b5530257b 100644
+--- a/app/build.gradle.kts
++++ b/app/build.gradle.kts
+@@ -22,21 +22,16 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+ 
+ plugins {
+     id("com.android.application")
+-    id("com.google.gms.google-services")
+     kotlin("android")
+     kotlin("kapt")
+     id("com.google.devtools.ksp")
+     id("dagger.hilt.android.plugin")
+-    id("io.sentry.android.gradle")
+     id("org.jetbrains.kotlinx.kover")
+     id("me.proton.core.gradle-plugins.environment-config") version libs.versions.proton.core.plugin.get()
+     id("org.jetbrains.kotlin.plugin.compose")
+     id("app-config-plugin")
+ }
+ 
+-val accountSentryDSN: String = System.getenv("SENTRY_DSN_ACCOUNT") ?: ""
+-val sentryDSN: String = System.getenv("SENTRY_DSN_MAIL") ?: ""
+-
+ val gitHashProvider: Provider<String> = providers.exec {
+     commandLine("git", "rev-parse", "--short=7", "HEAD")
+     isIgnoreExitValue = false
+@@ -65,8 +60,6 @@ android {
+             apiPrefix = "mail-api"
+         }
+ 
+-        buildConfigField("String", "SENTRY_DSN", sentryDSN.toBuildConfigValue())
+-        buildConfigField("String", "ACCOUNT_SENTRY_DSN", accountSentryDSN.toBuildConfigValue())
+         buildConfigField("String", "RUST_SDK_VERSION", "\"${libs.versions.proton.rust.core.get()}\"")
+ 
+         setAssetLinksResValue("proton.me")
+@@ -247,9 +240,6 @@ dependencies {
+     implementation(project(":design-system"))
+     implementation(project(":presentation-compose"))
+ 
+-    implementation(libs.play.review.core)
+-    implementation(libs.play.review.ext)
+-
+     debugImplementation(libs.bundles.app.debug)
+ 
+     // Environment configuration
+@@ -288,22 +278,6 @@ dependencies {
+     kspAndroidTest(project(":test:robot:ksp:processor"))
+ }
+ 
+-fun isSentryAutoUploadEnabled(): Boolean = gradle.startParameter.taskNames.any {
+-    it.contains("release", true)
+-}
+-
+-sentry {
+-    autoInstallation {
+-        sentryVersion = libs.versions.sentry.asProvider()
+-        autoUploadProguardMapping = isSentryAutoUploadEnabled()
+-        uploadNativeSymbols = isSentryAutoUploadEnabled()
+-    }
+-
+-    tracingInstrumentation {
+-        enabled = false
+-    }
+-}
+-
+ fun String?.toBuildConfigValue() = if (this != null) "\"$this\"" else "null"
+ 
+ fun VariantDimension.setAssetLinksResValue(host: String) {
+diff --git a/app/proguard/firebase.pro b/app/proguard/firebase.pro
+deleted file mode 100644
+index 67ca987594..0000000000
+--- a/app/proguard/firebase.pro
++++ /dev/null
+@@ -1 +0,0 @@
+--dontwarn com.google.firebase.analytics.connector.AnalyticsConnector
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index fb1c5d1400..32f1886272 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -55,20 +55,7 @@
+         <meta-data
+             android:name="asset_statements"
+             android:resource="@string/asset_statements" />
+-        <meta-data
+-            android:name="firebase_analytics_collection_deactivated"
+-            android:value="true" />
+-        <meta-data
+-            android:name="firebase_messaging_auto_init_enabled"
+-            android:value="false" />
+-        <meta-data
+-            android:name="google_analytics_adid_collection_enabled"
+-            android:value="false" />
+ 
+-        <provider
+-            android:name="io.sentry.android.core.SentryInitProvider"
+-            android:authorities="io.sentry.android.core"
+-            tools:node="remove" />
+         <provider
+             android:name="androidx.startup.InitializationProvider"
+             android:authorities="${applicationId}.androidx-startup"
+@@ -82,10 +69,6 @@
+                 android:name="ch.protonmail.android.initializer.FeatureFlagInitializer"
+                 android:value="androidx.startup"
+                 tools:node="remove" />
+-            <meta-data
+-                android:name="ch.protonmail.android.initializer.SentryInitializer"
+-                android:value="androidx.startup"
+-                tools:node="remove" />
+             <meta-data
+                 android:name="ch.protonmail.android.initializer.ChallengeInitializer"
+                 android:value="androidx.startup"
+@@ -229,15 +212,6 @@
+                 android:value="true" />
+         </service>
+ 
+-        <service
+-            android:name="ch.protonmail.android.mailnotifications.data.remote.fcm.PMFirebaseMessagingService"
+-            android:enabled="${isFcmServiceEnabled}"
+-            android:exported="false">
+-            <intent-filter>
+-                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+-            </intent-filter>
+-        </service>
+-
+         <service
+             android:name="androidx.work.impl.foreground.SystemForegroundService"
+             android:foregroundServiceType="dataSync"
+diff --git a/app/src/main/kotlin/ch/protonmail/android/App.kt b/app/src/main/kotlin/ch/protonmail/android/App.kt
+index 07ba3643e5..4cfb303ba0 100644
+--- a/app/src/main/kotlin/ch/protonmail/android/App.kt
++++ b/app/src/main/kotlin/ch/protonmail/android/App.kt
+@@ -30,7 +30,6 @@ import ch.protonmail.android.mailbugreport.domain.LogsExportFeatureSetting
+ import ch.protonmail.android.mailbugreport.domain.annotations.LogsExportFeatureSettingValue
+ import ch.protonmail.android.mailcommon.domain.benchmark.BenchmarkTracer
+ import ch.protonmail.android.mailcrashrecord.domain.usecase.SaveMessageBodyWebViewCrash
+-import ch.protonmail.android.mailnotifications.domain.FirebaseMessagingTokenLifecycleObserver
+ import ch.protonmail.android.mailsession.data.initializer.DatabaseLifecycleObserver
+ import dagger.hilt.android.HiltAndroidApp
+ import javax.inject.Inject
+@@ -52,9 +51,6 @@ internal class App : Application() {
+     @Inject
+     lateinit var databaseLifecycleObserver: Provider<DatabaseLifecycleObserver>
+ 
+-    @Inject
+-    lateinit var firebaseLifecycleObserver: Provider<FirebaseMessagingTokenLifecycleObserver>
+-
+     @Inject
+     lateinit var eventLoopLifecycleObserver: Provider<RustEventLoopErrorLifecycleObserver>
+ 
+@@ -75,7 +71,6 @@ internal class App : Application() {
+ 
+         addLogsFileHandlerObserver()
+         addDatabaseObserver()
+-        addFirebaseTokenLifecycleObserver()
+         addEventLoopObserver()
+ 
+         benchmarkTracer.end()
+@@ -91,10 +86,6 @@ internal class App : Application() {
+         ProcessLifecycleOwner.get().lifecycle.addObserver(databaseLifecycleObserver.get())
+     }
+ 
+-    private fun addFirebaseTokenLifecycleObserver() {
+-        ProcessLifecycleOwner.get().lifecycle.addObserver(firebaseLifecycleObserver.get())
+-    }
+-
+     private fun addEventLoopObserver() {
+         ProcessLifecycleOwner.get().lifecycle.addObserver(eventLoopLifecycleObserver.get())
+     }
+diff --git a/app/src/main/kotlin/ch/protonmail/android/MainActivity.kt b/app/src/main/kotlin/ch/protonmail/android/MainActivity.kt
+index 9ffef11a21..0b6cdce3cd 100644
+--- a/app/src/main/kotlin/ch/protonmail/android/MainActivity.kt
++++ b/app/src/main/kotlin/ch/protonmail/android/MainActivity.kt
+@@ -44,8 +44,6 @@ import ch.protonmail.android.navigation.model.LauncherState
+ import ch.protonmail.android.navigation.share.NewIntentObserver
+ import coil.Coil
+ import coil.ImageLoader
+-import com.google.android.play.core.review.ReviewException
+-import com.google.android.play.core.review.ReviewManager
+ import dagger.hilt.android.AndroidEntryPoint
+ import kotlinx.coroutines.launch
+ import me.proton.android.core.payment.domain.IconResourceManager
+diff --git a/app/src/main/kotlin/ch/protonmail/android/initializer/MainInitializer.kt b/app/src/main/kotlin/ch/protonmail/android/initializer/MainInitializer.kt
+index 1a45515bb6..b2503fa1e0 100644
+--- a/app/src/main/kotlin/ch/protonmail/android/initializer/MainInitializer.kt
++++ b/app/src/main/kotlin/ch/protonmail/android/initializer/MainInitializer.kt
+@@ -44,7 +44,7 @@ class MainInitializer : Initializer<Unit> {
+         private fun mailDependencies(): List<Class<out Initializer<*>?>> = emptyList()
+ 
+         private fun releaseOnlyDependenciesIfNeeded() =
+-            if (BuildConfig.DEBUG) emptyList() else listOf(SentryInitializer::class.java)
++            emptyList()
+     }
+ 
+     override fun create(context: Context) {
+diff --git a/app/src/main/kotlin/ch/protonmail/android/initializer/SentryInitializer.kt b/app/src/main/kotlin/ch/protonmail/android/initializer/SentryInitializer.kt
+deleted file mode 100644
+index 2e0b0e9ce1..0000000000
+--- a/app/src/main/kotlin/ch/protonmail/android/initializer/SentryInitializer.kt
++++ /dev/null
+@@ -1,76 +0,0 @@
+-/*
+- * Copyright (c) 2022 Proton Technologies AG
+- * This file is part of Proton Technologies AG and Proton Mail.
+- *
+- * Proton Mail is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation, either version 3 of the License, or
+- * (at your option) any later version.
+- *
+- * Proton Mail is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with Proton Mail. If not, see <https://www.gnu.org/licenses/>.
+- */
+-
+-package ch.protonmail.android.initializer
+-
+-import android.content.Context
+-import androidx.startup.Initializer
+-import ch.protonmail.android.BuildConfig
+-import ch.protonmail.android.logging.RustLogsAttachmentProcessor
+-import ch.protonmail.android.logging.SentryUserObserver
+-import dagger.hilt.EntryPoint
+-import dagger.hilt.InstallIn
+-import dagger.hilt.android.EntryPointAccessors
+-import dagger.hilt.components.SingletonComponent
+-import io.sentry.SentryLevel
+-import io.sentry.SentryOptions
+-import io.sentry.android.core.SentryAndroid
+-import io.sentry.android.timber.SentryTimberIntegration
+-import kotlinx.coroutines.flow.MutableStateFlow
+-import me.proton.core.configuration.EnvironmentConfigurationDefaults
+-
+-class SentryInitializer : Initializer<Unit> {
+-
+-    override fun create(context: Context) {
+-        val entryPoint = EntryPointAccessors.fromApplication(
+-            context.applicationContext,
+-            SentryInitializerEntryPoint::class.java
+-        )
+-        val isCrashReportsEnabled = MutableStateFlow(true)
+-
+-        SentryAndroid.init(context.applicationContext) { options: SentryOptions ->
+-            options.dsn = BuildConfig.SENTRY_DSN
+-            options.release = BuildConfig.VERSION_NAME
+-            options.environment = EnvironmentConfigurationDefaults.host
+-            options.addIntegration(
+-                SentryTimberIntegration(
+-                    minEventLevel = SentryLevel.WARNING,
+-                    minBreadcrumbLevel = SentryLevel.INFO
+-                )
+-            )
+-            options.addEventProcessor(entryPoint.rustLogsAttachmentProcessor())
+-            options.setBeforeSend { event, _ ->
+-                if (isCrashReportsEnabled.value) event else null
+-            }
+-        }
+-
+-        entryPoint.observer().start {
+-            isCrashReportsEnabled.value = it
+-        }
+-    }
+-
+-    override fun dependencies(): List<Class<out Initializer<*>>> = emptyList()
+-
+-    @EntryPoint
+-    @InstallIn(SingletonComponent::class)
+-    interface SentryInitializerEntryPoint {
+-
+-        fun observer(): SentryUserObserver
+-        fun rustLogsAttachmentProcessor(): RustLogsAttachmentProcessor
+-    }
+-}
+diff --git a/app/src/main/kotlin/ch/protonmail/android/logging/SentryUserObserver.kt b/app/src/main/kotlin/ch/protonmail/android/logging/SentryUserObserver.kt
+deleted file mode 100644
+index c16220fce1..0000000000
+--- a/app/src/main/kotlin/ch/protonmail/android/logging/SentryUserObserver.kt
++++ /dev/null
+@@ -1,54 +0,0 @@
+-/*
+- * Copyright (c) 2022 Proton Technologies AG
+- * This file is part of Proton Technologies AG and Proton Mail.
+- *
+- * Proton Mail is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation, either version 3 of the License, or
+- * (at your option) any later version.
+- *
+- * Proton Mail is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with Proton Mail. If not, see <https://www.gnu.org/licenses/>.
+- */
+-
+-package ch.protonmail.android.logging
+-
+-import java.util.UUID
+-import ch.protonmail.android.mailsession.domain.repository.UserSessionRepository
+-import io.sentry.Sentry
+-import io.sentry.protocol.User
+-import kotlinx.coroutines.flow.launchIn
+-import kotlinx.coroutines.flow.onEach
+-import me.proton.core.domain.entity.UserId
+-import me.proton.core.util.kotlin.CoroutineScopeProvider
+-import javax.inject.Inject
+-import javax.inject.Singleton
+-
+-@Singleton
+-class SentryUserObserver @Inject constructor(
+-    private val scopeProvider: CoroutineScopeProvider,
+-    private val sessionRepository: UserSessionRepository
+-) {
+-
+-    fun start(onCrashReportSettingChange: (enabled: Boolean) -> Unit) = sessionRepository.observePrimaryUserId()
+-        .onEach { userId ->
+-            assignSentryUser(userId)
+-            onCrashReportSettingChange(isCrashReportsEnabled(userId))
+-        }
+-        .launchIn(scopeProvider.GlobalDefaultSupervisedScope)
+-
+-    private fun assignSentryUser(userId: UserId?) {
+-        val user = User().apply { id = userId?.id ?: UUID.randomUUID().toString() }
+-        Sentry.setUser(user)
+-    }
+-
+-    private suspend fun isCrashReportsEnabled(userId: UserId?): Boolean {
+-        userId ?: return true
+-        return sessionRepository.getUserSettings(userId)?.crashReports ?: false
+-    }
+-}
+diff --git a/app/src/test/kotlin/ch/protonmail/android/logging/SentryUserObserverTest.kt b/app/src/test/kotlin/ch/protonmail/android/logging/SentryUserObserverTest.kt
+deleted file mode 100644
+index 960a8e92db..0000000000
+--- a/app/src/test/kotlin/ch/protonmail/android/logging/SentryUserObserverTest.kt
++++ /dev/null
+@@ -1,117 +0,0 @@
+-/*
+- * Copyright (c) 2022 Proton Technologies AG
+- * This file is part of Proton Technologies AG and Proton Mail.
+- *
+- * Proton Mail is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation, either version 3 of the License, or
+- * (at your option) any later version.
+- *
+- * Proton Mail is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with Proton Mail. If not, see <https://www.gnu.org/licenses/>.
+- */
+-
+-package ch.protonmail.android.logging
+-
+-import java.util.UUID
+-import ch.protonmail.android.mailsession.domain.model.UserSettings
+-import ch.protonmail.android.mailsession.domain.repository.UserSessionRepository
+-import ch.protonmail.android.testdata.user.UserIdTestData
+-import io.mockk.coEvery
+-import io.mockk.every
+-import io.mockk.mockk
+-import io.mockk.mockkStatic
+-import io.mockk.slot
+-import io.mockk.unmockkStatic
+-import io.mockk.verify
+-import io.sentry.Sentry
+-import io.sentry.protocol.User
+-import kotlinx.coroutines.Dispatchers
+-import kotlinx.coroutines.flow.flowOf
+-import kotlinx.coroutines.test.resetMain
+-import kotlinx.coroutines.test.runTest
+-import kotlinx.coroutines.test.setMain
+-import me.proton.core.test.kotlin.TestCoroutineScopeProvider
+-import me.proton.core.test.kotlin.TestDispatcherProvider
+-import org.junit.After
+-import org.junit.Before
+-import org.junit.Test
+-import kotlin.test.assertEquals
+-import kotlin.test.assertTrue
+-
+-class SentryUserObserverTest {
+-
+-    private val sessionRepository = mockk<UserSessionRepository> {
+-        coEvery { this@mockk.observePrimaryUserId() } returns flowOf(UserIdTestData.userId)
+-    }
+-
+-    private lateinit var sentryUserObserver: SentryUserObserver
+-
+-    @Before
+-    fun setUp() {
+-        Dispatchers.setMain(TestDispatcherProvider().Main)
+-        mockkStatic(Sentry::class)
+-        sentryUserObserver = SentryUserObserver(
+-            scopeProvider = TestCoroutineScopeProvider(),
+-            sessionRepository = sessionRepository
+-        )
+-    }
+-
+-    @After
+-    fun tearDown() {
+-        Dispatchers.resetMain()
+-        unmockkStatic(Sentry::class)
+-    }
+-
+-    @Test
+-    fun `register userId in Sentry for valid primary account`() = runTest {
+-        // When
+-        sentryUserObserver.start(onCrashReportSettingChange = {}).join()
+-        // Then
+-        val sentryUserSlot = slot<User>()
+-        verify { Sentry.setUser(capture(sentryUserSlot)) }
+-        assertEquals(UserIdTestData.userId.id, sentryUserSlot.captured.id)
+-    }
+-
+-    @Test
+-    fun `register random UUID in Sentry when no primary account available`() = runTest {
+-        // Given
+-        every { sessionRepository.observePrimaryUserId() } returns flowOf(null)
+-        // When
+-        sentryUserObserver.start(onCrashReportSettingChange = {}).join()
+-        // Then
+-        val sentryUserSlot = slot<User>()
+-        verify { Sentry.setUser(capture(sentryUserSlot)) }
+-        val actual = UUID.fromString(sentryUserSlot.captured.id)
+-        assertTrue(actual.toString().isNotBlank())
+-    }
+-
+-    @Test
+-    fun `crash reports user setting is disabled`() = runTest {
+-        // Given
+-        var isEnabled: Boolean? = null
+-        coEvery { sessionRepository.getUserSettings(any()) } returns mockk<UserSettings> {
+-            every { crashReports } returns false
+-        }
+-        // When
+-        sentryUserObserver.start(onCrashReportSettingChange = { isEnabled = it }).join()
+-        // Then
+-        assertEquals(false, isEnabled)
+-    }
+-
+-    @Test
+-    fun `crash reports are enabled when no primary account available`() = runTest {
+-        // Given
+-        var isEnabled: Boolean? = null
+-        every { sessionRepository.observePrimaryUserId() } returns flowOf(null)
+-        // When
+-        sentryUserObserver.start(onCrashReportSettingChange = { isEnabled = it }).join()
+-        // Then
+-        assertEquals(true, isEnabled)
+-    }
+-}
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 9c5c2f8b17..fd8441ea24 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -26,8 +26,6 @@ buildscript {
+         classpath(libs.android.tools.build)
+         classpath(libs.kotlin.gradle)
+         classpath(libs.hilt.android.gradle)
+-        classpath(libs.google.services)
+-        classpath(libs.sentry.gradle)
+         classpath(libs.paparazzi.plugin)
+     }
+ }
+diff --git a/config/google-services/dummy-google-services.json b/config/google-services/dummy-google-services.json
+deleted file mode 100644
+index fbe87a56e7..0000000000
+--- a/config/google-services/dummy-google-services.json
++++ /dev/null
+@@ -1,284 +0,0 @@
+-{
+-  "project_info": {
+-    "project_number": "111111111111",
+-    "firebase_url": "",
+-    "project_id": "",
+-    "storage_bucket": ""
+-  },
+-  "client": [
+-    {
+-      "client_info": {
+-        "mobilesdk_app_id": "1:111111111111:android:1111111111111111",
+-        "android_client_info": {
+-          "package_name": "ch.protonmail.android"
+-        }
+-      },
+-      "oauth_client": [
+-        {
+-          "client_id": "",
+-          "client_type": 3
+-        }
+-      ],
+-      "api_key": [
+-        {
+-          "current_key": "DummyApiKey"
+-        },
+-        {
+-          "current_key": "DummyApiKey"
+-        }
+-      ],
+-      "services": {
+-        "appinvite_service": {
+-          "other_platform_oauth_client": [
+-            {
+-              "client_id": "",
+-              "client_type": 3
+-            },
+-            {
+-              "client_id": "",
+-              "client_type": 2,
+-              "ios_info": {
+-                "bundle_id": "ch.protonmail.protonmail"
+-              }
+-            }
+-          ]
+-        }
+-      }
+-    },
+-    {
+-      "client_info": {
+-        "mobilesdk_app_id": "2:111111111111:android:1111111111111111",
+-        "android_client_info": {
+-          "package_name": "ch.protonmail.android.alpha"
+-        }
+-      },
+-      "oauth_client": [
+-        {
+-          "client_id": "",
+-          "client_type": 3
+-        }
+-      ],
+-      "api_key": [
+-        {
+-          "current_key": "DummyApiKey"
+-        },
+-        {
+-          "current_key": "DummyApiKey"
+-        }
+-      ],
+-      "services": {
+-        "appinvite_service": {
+-          "other_platform_oauth_client": [
+-            {
+-              "client_id": "",
+-              "client_type": 3
+-            },
+-            {
+-              "client_id": "",
+-              "client_type": 2,
+-              "ios_info": {
+-                "bundle_id": "ch.protonmail.protonmail"
+-              }
+-            }
+-          ]
+-        }
+-      }
+-    },
+-    {
+-      "client_info": {
+-        "mobilesdk_app_id": "3:111111111111:android:1111111111111111",
+-        "android_client_info": {
+-          "package_name": "ch.protonmail.android.beta"
+-        }
+-      },
+-      "oauth_client": [
+-        {
+-          "client_id": "",
+-          "client_type": 3
+-        }
+-      ],
+-      "api_key": [
+-        {
+-          "current_key": "DummyApiKey"
+-        },
+-        {
+-          "current_key": "DummyApiKey"
+-        }
+-      ],
+-      "services": {
+-        "appinvite_service": {
+-          "other_platform_oauth_client": [
+-            {
+-              "client_id": "",
+-              "client_type": 3
+-            },
+-            {
+-              "client_id": "",
+-              "client_type": 2,
+-              "ios_info": {
+-                "bundle_id": "ch.protonmail.protonmail"
+-              }
+-            }
+-          ]
+-        }
+-      }
+-    },
+-    {
+-      "client_info": {
+-        "mobilesdk_app_id": "4:111111111111:android:1111111111111111",
+-        "android_client_info": {
+-          "package_name": "ch.protonmail.android.dev"
+-        }
+-      },
+-      "oauth_client": [
+-        {
+-          "client_id": "",
+-          "client_type": 3
+-        }
+-      ],
+-      "api_key": [
+-        {
+-          "current_key": "DummyApiKey"
+-        },
+-        {
+-          "current_key": "DummyApiKey"
+-        }
+-      ],
+-      "services": {
+-        "appinvite_service": {
+-          "other_platform_oauth_client": [
+-            {
+-              "client_id": "",
+-              "client_type": 3
+-            },
+-            {
+-              "client_id": "",
+-              "client_type": 2,
+-              "ios_info": {
+-                "bundle_id": "ch.protonmail.protonmail"
+-              }
+-            }
+-          ]
+-        }
+-      }
+-    },
+-    {
+-      "client_info": {
+-        "mobilesdk_app_id": "4:111111111111:android:1111111111111111",
+-        "android_client_info": {
+-          "package_name": "ch.protonmail.android.et"
+-        }
+-      },
+-      "oauth_client": [
+-        {
+-          "client_id": "",
+-          "client_type": 3
+-        }
+-      ],
+-      "api_key": [
+-        {
+-          "current_key": "DummyApiKey"
+-        },
+-        {
+-          "current_key": "DummyApiKey"
+-        }
+-      ],
+-      "services": {
+-        "appinvite_service": {
+-          "other_platform_oauth_client": [
+-            {
+-              "client_id": "",
+-              "client_type": 3
+-            },
+-            {
+-              "client_id": "",
+-              "client_type": 2,
+-              "ios_info": {
+-                "bundle_id": "ch.protonmail.protonmail"
+-              }
+-            }
+-          ]
+-        }
+-      }
+-    },
+-    {
+-      "client_info": {
+-        "mobilesdk_app_id": "4:111111111111:android:1111111111111111",
+-        "android_client_info": {
+-          "package_name": "ch.protonmail.android.et.alpha"
+-        }
+-      },
+-      "oauth_client": [
+-        {
+-          "client_id": "",
+-          "client_type": 3
+-        }
+-      ],
+-      "api_key": [
+-        {
+-          "current_key": "DummyApiKey"
+-        },
+-        {
+-          "current_key": "DummyApiKey"
+-        }
+-      ],
+-      "services": {
+-        "appinvite_service": {
+-          "other_platform_oauth_client": [
+-            {
+-              "client_id": "",
+-              "client_type": 3
+-            },
+-            {
+-              "client_id": "",
+-              "client_type": 2,
+-              "ios_info": {
+-                "bundle_id": "ch.protonmail.protonmail"
+-              }
+-            }
+-          ]
+-        }
+-      }
+-    },
+-    {
+-      "client_info": {
+-        "mobilesdk_app_id": "4:111111111111:android:1111111111111111",
+-        "android_client_info": {
+-          "package_name": "ch.protonmail.android.et.dev"
+-        }
+-      },
+-      "oauth_client": [
+-        {
+-          "client_id": "",
+-          "client_type": 3
+-        }
+-      ],
+-      "api_key": [
+-        {
+-          "current_key": "DummyApiKey"
+-        },
+-        {
+-          "current_key": "DummyApiKey"
+-        }
+-      ],
+-      "services": {
+-        "appinvite_service": {
+-          "other_platform_oauth_client": [
+-            {
+-              "client_id": "",
+-              "client_type": 3
+-            },
+-            {
+-              "client_id": "",
+-              "client_type": 2,
+-              "ios_info": {
+-                "bundle_id": "ch.protonmail.protonmail"
+-              }
+-            }
+-          ]
+-        }
+-      }
+-    }
+-  ],
+-  "configuration_version": "1"
+-}
+diff --git a/firebase-device-config.yml b/firebase-device-config.yml
+deleted file mode 100644
+index e15b60447c..0000000000
+--- a/firebase-device-config.yml
++++ /dev/null
+@@ -1,14 +0,0 @@
+-fullTest:
+-  device:
+-    - model: MediumPhone.arm
+-      version: 34
+-    - model: Pixel2.arm
+-      version: 33
+-    - model: Pixel2.arm
+-      version: 29
+-smokeTest:
+-  device:
+-    - model: MediumPhone.arm
+-      version: 34
+-    - model: Pixel2.arm
+-      version: 30
+diff --git a/gradle/libs.versions.toml b/gradle/libs.versions.toml
+index 1aad63efeb..3183dfc03d 100644
+--- a/gradle/libs.versions.toml
++++ b/gradle/libs.versions.toml
+@@ -1,8 +1,6 @@
+ [versions]
+ android-gradle-plugin = "8.13.2"
+-google-services-plugin = "4.4.4"
+ proton-core-plugin = "1.3.0"
+-sentry-gradle-plugin = "5.12.2"
+ 
+ accompanist-webview = "0.30.1"
+ accompanist-permissions = "0.37.3"
+@@ -49,7 +47,6 @@ cash-turbine = "1.2.1"
+ coil = "2.7.0"
+ dagger = "2.57.2"
+ detekt = "1.23.8"
+-firebase-bom = "34.7.0"
+ guava = "33.5.0-jre"
+ haze = "1.6.10" # 1.7.1 requires compileSdk=36
+ timber = "5.0.1"
+@@ -73,9 +70,6 @@ robolectric = "4.15.1" # 4.16.0 requires Java 21
+ kotlinpoet-ksp = "2.2.0"
+ leakcanary = "2.14"
+ okhttp = "5.3.2"
+-play-services = "18.9.0"
+-play-review = "2.0.2"
+-sentry = "8.28.0"
+ zxing-embedded = "4.3.0"
+ 
+ [plugins]
+@@ -92,8 +86,6 @@ proton-core-global-coverage = { id = "me.proton.core.gradle-plugins.global-cover
+ android-tools-build = { module = "com.android.tools.build:gradle", version.ref = "android-gradle-plugin" }
+ kotlin-gradle = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+ hilt-android-gradle = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "dagger" }
+-google-services = { module = "com.google.gms:google-services", version.ref = "google-services-plugin" }
+-sentry-gradle = { module = "io.sentry:sentry-android-gradle-plugin", version.ref = "sentry-gradle-plugin" }
+ paparazzi-plugin = { module = "app.cash.paparazzi:paparazzi-gradle-plugin", version.ref = "paparazzi" }
+ 
+ # Standard dependencies
+@@ -168,8 +160,6 @@ dagger-hilt-core = { module = "com.google.dagger:hilt-core", version.ref = "dagg
+ dagger-hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "dagger" }
+ detekt-api = { module = "io.gitlab.arturbosch.detekt:detekt-api", version.ref = "detekt" }
+ detekt-test = { module = "io.gitlab.arturbosch.detekt:detekt-test", version.ref = "detekt" }
+-firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
+-firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
+ javax-inject = { module = "javax.inject:javax.inject", version.ref = "javax-inject" }
+ java-jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
+ guava = { module = "com.google.guava:guava", version.ref = "guava" }
+@@ -194,11 +184,6 @@ mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "
+ okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+ okhttp-logging = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "okhttp" }
+ okhttp-tls = { module = "com.squareup.okhttp3:okhttp-tls", version.ref = "okhttp" }
+-sentry-compose = { module = "io.sentry:sentry-compose", version.ref = "sentry" }
+-sentry = { module = "io.sentry:sentry", version.ref = "sentry" }
+-play-services = { module = "com.google.android.gms:play-services-base", version.ref = "play-services" }
+-play-review-core = { module = "com.google.android.play:review", version.ref = "play-review" }
+-play-review-ext = { module = "com.google.android.play:review-ktx", version.ref = "play-review" }
+ plumber = { module = "com.squareup.leakcanary:plumber-android", version.ref = "leakcanary" }
+ robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+ zxing-embedded = { module = "com.journeyapps:zxing-android-embedded", version.ref = "zxing-embedded" }
+@@ -268,8 +253,6 @@ appLibs = [
+     "kotlinx-immutableCollections",
+     "okhttp",
+     "plumber",
+-    "sentry",
+-    "sentry-compose",
+     "proton-core-proguardRules",
+     "proton-rust-core"
+ ]
+diff --git a/mail-notifications/build.gradle.kts b/mail-notifications/build.gradle.kts
+index bc023f2228..b0e4e4d94b 100644
+--- a/mail-notifications/build.gradle.kts
++++ b/mail-notifications/build.gradle.kts
+@@ -72,13 +72,6 @@ dependencies {
+     kapt(libs.bundles.app.annotationProcessors)
+     compileOnly(libs.proton.rust.core)
+ 
+-    api(platform(libs.firebase.bom))
+-    api(libs.firebase.messaging) {
+-        exclude(group = "com.google.firebase", module = "firebase-core")
+-        exclude(group = "com.google.firebase", module = "firebase-analytics")
+-        exclude(group = "com.google.firebase", module = "firebase-measurement-connector")
+-    }
+-
+     implementation(project(":mail-common"))
+     implementation(project(":mail-settings:domain"))
+     implementation(project(":mail-session:data"))
+diff --git a/mail-notifications/src/main/kotlin/ch/protonmail/android/mailnotifications/dagger/MailNotificationsModule.kt b/mail-notifications/src/main/kotlin/ch/protonmail/android/mailnotifications/dagger/MailNotificationsModule.kt
+deleted file mode 100644
+index 19423f0c84..0000000000
+--- a/mail-notifications/src/main/kotlin/ch/protonmail/android/mailnotifications/dagger/MailNotificationsModule.kt
++++ /dev/null
+@@ -1,108 +0,0 @@
+-/*
+- * Copyright (c) 2022 Proton Technologies AG
+- * This file is part of Proton Technologies AG and Proton Mail.
+- *
+- * Proton Mail is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation, either version 3 of the License, or
+- * (at your option) any later version.
+- *
+- * Proton Mail is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with Proton Mail. If not, see <https://www.gnu.org/licenses/>.
+- */
+-
+-package ch.protonmail.android.mailnotifications.dagger
+-
+-import android.content.Context
+-import androidx.core.app.NotificationManagerCompat
+-import ch.protonmail.android.mailnotifications.data.local.NotificationsPermissionLocalDataSource
+-import ch.protonmail.android.mailnotifications.data.local.NotificationsPermissionLocalDataSourceImpl
+-import ch.protonmail.android.mailnotifications.data.repository.DeviceRegistrationRepository
+-import ch.protonmail.android.mailnotifications.data.repository.DeviceRegistrationRepositoryImpl
+-import ch.protonmail.android.mailnotifications.data.repository.NotificationsPermissionRepository
+-import ch.protonmail.android.mailnotifications.data.repository.NotificationsPermissionRepositoryImpl
+-import ch.protonmail.android.mailnotifications.domain.handler.AccountStateAwareNotificationHandler
+-import ch.protonmail.android.mailnotifications.domain.handler.NotificationHandler
+-import ch.protonmail.android.mailnotifications.domain.proxy.NotificationManagerCompatProxy
+-import ch.protonmail.android.mailnotifications.domain.proxy.NotificationManagerCompatProxyImpl
+-import ch.protonmail.android.mailnotifications.permissions.NotificationsPermissionOrchestrator
+-import ch.protonmail.android.mailnotifications.permissions.NotificationsPermissionOrchestratorImpl
+-import com.google.firebase.messaging.FirebaseMessaging
+-import dagger.Binds
+-import dagger.Module
+-import dagger.Provides
+-import dagger.Reusable
+-import dagger.hilt.EntryPoint
+-import dagger.hilt.InstallIn
+-import dagger.hilt.android.qualifiers.ApplicationContext
+-import dagger.hilt.components.SingletonComponent
+-import dagger.multibindings.IntoSet
+-import javax.inject.Singleton
+-
+-@Module
+-@InstallIn(SingletonComponent::class)
+-object MailNotificationsModule {
+-
+-    @Provides
+-    @Reusable
+-    fun provideFirebaseMessaging(): FirebaseMessaging = FirebaseMessaging.getInstance()
+-
+-    @Provides
+-    @Reusable
+-    fun provideNotificationManagerCompat(@ApplicationContext context: Context): NotificationManagerCompat =
+-        NotificationManagerCompat.from(context)
+-
+-    @EntryPoint
+-    @InstallIn(SingletonComponent::class)
+-    interface EntryPointModule {
+-
+-        fun handlers(): Set<NotificationHandler>
+-    }
+-
+-    @Module
+-    @InstallIn(SingletonComponent::class)
+-    internal interface BindsModule {
+-
+-        @Binds
+-        @Singleton
+-        fun bindDeviceRegistrationRepository(
+-            implementation: DeviceRegistrationRepositoryImpl
+-        ): DeviceRegistrationRepository
+-
+-        @Binds
+-        @Singleton
+-        fun bindNotificationPermissionsOrchestrator(
+-            implementation: NotificationsPermissionOrchestratorImpl
+-        ): NotificationsPermissionOrchestrator
+-
+-        @Binds
+-        @Reusable
+-        fun bindNotificationPermissionsRepository(
+-            implementation: NotificationsPermissionRepositoryImpl
+-        ): NotificationsPermissionRepository
+-
+-        @Binds
+-        @Reusable
+-        fun bindNotificationPermissionsDataSource(
+-            implementation: NotificationsPermissionLocalDataSourceImpl
+-        ): NotificationsPermissionLocalDataSource
+-
+-        @Binds
+-        @Reusable
+-        fun bindNotificationManagerCompatProxy(
+-            notificationManagerProxyImpl: NotificationManagerCompatProxyImpl
+-        ): NotificationManagerCompatProxy
+-
+-        @Binds
+-        @Singleton
+-        @IntoSet
+-        fun bindAccountStateAwareNotificationHandler(
+-            handlerImpl: AccountStateAwareNotificationHandler
+-        ): NotificationHandler
+-    }
+-}
+diff --git a/mail-notifications/src/main/kotlin/ch/protonmail/android/mailnotifications/data/FirebaseNotificationsTokenChannel.kt b/mail-notifications/src/main/kotlin/ch/protonmail/android/mailnotifications/data/FirebaseNotificationsTokenChannel.kt
+deleted file mode 100644
+index 87d8a31490..0000000000
+--- a/mail-notifications/src/main/kotlin/ch/protonmail/android/mailnotifications/data/FirebaseNotificationsTokenChannel.kt
++++ /dev/null
+@@ -1,36 +0,0 @@
+-/*
+- * Copyright (c) 2022 Proton Technologies AG
+- * This file is part of Proton Technologies AG and Proton Mail.
+- *
+- * Proton Mail is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation, either version 3 of the License, or
+- * (at your option) any later version.
+- *
+- * Proton Mail is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with Proton Mail. If not, see <https://www.gnu.org/licenses/>.
+- */
+-
+-package ch.protonmail.android.mailnotifications.data
+-
+-import kotlinx.coroutines.channels.Channel
+-import kotlinx.coroutines.flow.receiveAsFlow
+-import javax.inject.Inject
+-import javax.inject.Singleton
+-
+-@Singleton
+-class FirebaseNotificationsTokenChannel @Inject constructor() {
+-
+-    private val channel = Channel<String>(Channel.BUFFERED)
+-
+-    val tokenFlow = channel.receiveAsFlow()
+-
+-    suspend fun sendToken(token: String) {
+-        channel.send(token)
+-    }
+-}
+diff --git a/mail-notifications/src/main/kotlin/ch/protonmail/android/mailnotifications/data/remote/FirebaseMessagingProxy.kt b/mail-notifications/src/main/kotlin/ch/protonmail/android/mailnotifications/data/remote/FirebaseMessagingProxy.kt
+deleted file mode 100644
+index 8d093fbb9e..0000000000
+--- a/mail-notifications/src/main/kotlin/ch/protonmail/android/mailnotifications/data/remote/FirebaseMessagingProxy.kt
++++ /dev/null
+@@ -1,44 +0,0 @@
+-/*
+- * Copyright (c) 2022 Proton Technologies AG
+- * This file is part of Proton Technologies AG and Proton Mail.
+- *
+- * Proton Mail is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation, either version 3 of the License, or
+- * (at your option) any later version.
+- *
+- * Proton Mail is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with Proton Mail. If not, see <https://www.gnu.org/licenses/>.
+- */
+-
+-package ch.protonmail.android.mailnotifications.data.remote
+-
+-import arrow.core.Either
+-import arrow.core.left
+-import arrow.core.right
+-import ch.protonmail.android.mailcommon.domain.model.DataError
+-import com.google.firebase.messaging.FirebaseMessaging
+-import kotlinx.coroutines.suspendCancellableCoroutine
+-import javax.inject.Inject
+-import kotlin.coroutines.resume
+-
+-class FirebaseMessagingProxy @Inject constructor(
+-    private val firebaseMessaging: FirebaseMessaging
+-) {
+-
+-    suspend fun fetchToken() = fetchFirebaseToken()
+-
+-    private suspend fun fetchFirebaseToken(): Either<DataError.Remote, String> {
+-        return suspendCancellableCoroutine { continuation ->
+-            firebaseMessaging.token.addOnCompleteListener {
+-                val token = if (it.isSuccessful) it.result.right() else DataError.Remote.Unknown.left()
+-                continuation.resume(token)
+-            }
+-        }
+-    }
+-}
+diff --git a/mail-notifications/src/main/kotlin/ch/protonmail/android/mailnotifications/data/remote/fcm/PMFirebaseMessagingService.kt b/mail-notifications/src/main/kotlin/ch/protonmail/android/mailnotifications/data/remote/fcm/PMFirebaseMessagingService.kt
+deleted file mode 100644
+index f78d823ce9..0000000000
+--- a/mail-notifications/src/main/kotlin/ch/protonmail/android/mailnotifications/data/remote/fcm/PMFirebaseMessagingService.kt
++++ /dev/null
+@@ -1,59 +0,0 @@
+-/*
+- * Copyright (c) 2022 Proton Technologies AG
+- * This file is part of Proton Technologies AG and Proton Mail.
+- *
+- * Proton Mail is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation, either version 3 of the License, or
+- * (at your option) any later version.
+- *
+- * Proton Mail is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with Proton Mail. If not, see <https://www.gnu.org/licenses/>.
+- */
+-
+-package ch.protonmail.android.mailnotifications.data.remote.fcm
+-
+-import ch.protonmail.android.mailcommon.domain.coroutines.AppScope
+-import ch.protonmail.android.mailnotifications.data.FirebaseNotificationsTokenChannel
+-import ch.protonmail.android.mailnotifications.domain.usecase.content.ProcessPushNotificationMessage
+-import com.google.firebase.messaging.FirebaseMessagingService
+-import com.google.firebase.messaging.RemoteMessage
+-import dagger.hilt.android.AndroidEntryPoint
+-import kotlinx.coroutines.CoroutineScope
+-import kotlinx.coroutines.launch
+-import me.proton.core.network.domain.session.SessionId
+-import javax.inject.Inject
+-
+-@AndroidEntryPoint
+-internal class PMFirebaseMessagingService : FirebaseMessagingService() {
+-
+-    @Inject
+-    lateinit var processPushNotificationMessage: ProcessPushNotificationMessage
+-
+-    @Inject
+-    @AppScope
+-    lateinit var appScope: CoroutineScope
+-
+-    @Inject
+-    lateinit var firebaseNotificationsTokenChannel: FirebaseNotificationsTokenChannel
+-
+-    override fun onNewToken(token: String) {
+-        super.onNewToken(token)
+-        appScope.launch { firebaseNotificationsTokenChannel.sendToken(token) }
+-    }
+-
+-    override fun onMessageReceived(remoteMessage: RemoteMessage) {
+-        super.onMessageReceived(remoteMessage)
+-
+-        val uid = remoteMessage.data["UID"]
+-        val encryptedMessage = remoteMessage.data["encryptedMessage"]
+-        if (uid != null && encryptedMessage != null) {
+-            appScope.launch { processPushNotificationMessage(SessionId(uid), encryptedMessage) }
+-        }
+-    }
+-}
+diff --git a/mail-notifications/src/main/kotlin/ch/protonmail/android/mailnotifications/domain/FirebaseMessagingTokenLifecycleObserver.kt b/mail-notifications/src/main/kotlin/ch/protonmail/android/mailnotifications/domain/FirebaseMessagingTokenLifecycleObserver.kt
+deleted file mode 100644
+index f368cac122..0000000000
+--- a/mail-notifications/src/main/kotlin/ch/protonmail/android/mailnotifications/domain/FirebaseMessagingTokenLifecycleObserver.kt
++++ /dev/null
+@@ -1,68 +0,0 @@
+-/*
+- * Copyright (c) 2022 Proton Technologies AG
+- * This file is part of Proton Technologies AG and Proton Mail.
+- *
+- * Proton Mail is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation, either version 3 of the License, or
+- * (at your option) any later version.
+- *
+- * Proton Mail is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with Proton Mail. If not, see <https://www.gnu.org/licenses/>.
+- */
+-
+-package ch.protonmail.android.mailnotifications.domain
+-
+-import androidx.lifecycle.DefaultLifecycleObserver
+-import androidx.lifecycle.LifecycleOwner
+-import arrow.core.getOrElse
+-import ch.protonmail.android.mailcommon.domain.coroutines.AppScope
+-import ch.protonmail.android.mailnotifications.data.FirebaseNotificationsTokenChannel
+-import ch.protonmail.android.mailnotifications.data.remote.FirebaseMessagingProxy
+-import ch.protonmail.android.mailnotifications.data.repository.DeviceRegistrationRepository
+-import kotlinx.coroutines.CoroutineScope
+-import kotlinx.coroutines.Job
+-import kotlinx.coroutines.flow.distinctUntilChanged
+-import kotlinx.coroutines.launch
+-import timber.log.Timber
+-import javax.inject.Inject
+-
+-class FirebaseMessagingTokenLifecycleObserver @Inject constructor(
+-    private val firebaseMessagingProxy: FirebaseMessagingProxy,
+-    private val firebaseNotificationsTokenChannel: FirebaseNotificationsTokenChannel,
+-    private val deviceRegistrationRepository: DeviceRegistrationRepository,
+-    @AppScope private val coroutineScope: CoroutineScope
+-) : DefaultLifecycleObserver {
+-
+-    private var tokenFlowJob: Job? = null
+-
+-    override fun onCreate(owner: LifecycleOwner) {
+-        super.onCreate(owner)
+-
+-        tokenFlowJob = coroutineScope.launch {
+-            firebaseNotificationsTokenChannel.tokenFlow.distinctUntilChanged().collect {
+-                Timber.tag("Register device token").d("Received new token, registering...")
+-                deviceRegistrationRepository.registerDeviceToken(it)
+-            }
+-        }
+-
+-        coroutineScope.launch {
+-            val token = firebaseMessagingProxy.fetchToken().getOrElse {
+-                Timber.tag("Register device token").d("Unable to fetch token")
+-                return@launch
+-            }
+-
+-            firebaseNotificationsTokenChannel.sendToken(token)
+-        }
+-    }
+-
+-    override fun onDestroy(owner: LifecycleOwner) {
+-        super.onDestroy(owner)
+-        tokenFlowJob?.cancel()
+-    }
+-}
+diff --git a/mail-notifications/src/test/kotlin/ch/protonmail/android/mailnotifications/data/FirebaseNotificationsTokenChannelTest.kt b/mail-notifications/src/test/kotlin/ch/protonmail/android/mailnotifications/data/FirebaseNotificationsTokenChannelTest.kt
+deleted file mode 100644
+index 724063a971..0000000000
+--- a/mail-notifications/src/test/kotlin/ch/protonmail/android/mailnotifications/data/FirebaseNotificationsTokenChannelTest.kt
++++ /dev/null
+@@ -1,46 +0,0 @@
+-/*
+- * Copyright (c) 2022 Proton Technologies AG
+- * This file is part of Proton Technologies AG and Proton Mail.
+- *
+- * Proton Mail is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation, either version 3 of the License, or
+- * (at your option) any later version.
+- *
+- * Proton Mail is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with Proton Mail. If not, see <https://www.gnu.org/licenses/>.
+- */
+-
+-package ch.protonmail.android.mailnotifications.data
+-
+-import app.cash.turbine.test
+-import kotlinx.coroutines.test.runTest
+-import kotlin.test.Test
+-import kotlin.test.assertEquals
+-
+-internal class FirebaseNotificationsTokenChannelTest {
+-
+-    @Test
+-    fun `should send and receive the sent strings in the correct order`() = runTest {
+-        // Given
+-        val channel = FirebaseNotificationsTokenChannel()
+-        val strings = List(10) { index -> "string$index" }
+-
+-        // When
+-        strings.forEach { channel.sendToken(it) }
+-
+-        // Then
+-        channel.tokenFlow.test {
+-            strings.forEach { expectedString ->
+-                assertEquals(expectedString, awaitItem())
+-            }
+-
+-            expectNoEvents()
+-        }
+-    }
+-}
+diff --git a/mail-notifications/src/test/kotlin/ch/protonmail/android/mailnotifications/domain/FirebaseMessagingTokenLifecycleObserverTest.kt b/mail-notifications/src/test/kotlin/ch/protonmail/android/mailnotifications/domain/FirebaseMessagingTokenLifecycleObserverTest.kt
+deleted file mode 100644
+index 52a784ef83..0000000000
+--- a/mail-notifications/src/test/kotlin/ch/protonmail/android/mailnotifications/domain/FirebaseMessagingTokenLifecycleObserverTest.kt
++++ /dev/null
+@@ -1,114 +0,0 @@
+-/*
+- * Copyright (c) 2022 Proton Technologies AG
+- * This file is part of Proton Technologies AG and Proton Mail.
+- *
+- * Proton Mail is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation, either version 3 of the License, or
+- * (at your option) any later version.
+- *
+- * Proton Mail is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with Proton Mail. If not, see <https://www.gnu.org/licenses/>.
+- */
+-
+-package ch.protonmail.android.mailnotifications.domain
+-
+-import androidx.lifecycle.LifecycleOwner
+-import arrow.core.left
+-import arrow.core.right
+-import ch.protonmail.android.mailcommon.domain.model.DataError
+-import ch.protonmail.android.mailnotifications.data.FirebaseNotificationsTokenChannel
+-import ch.protonmail.android.mailnotifications.data.remote.FirebaseMessagingProxy
+-import ch.protonmail.android.mailnotifications.data.repository.DeviceRegistrationRepository
+-import ch.protonmail.android.test.utils.rule.MainDispatcherRule
+-import io.mockk.coEvery
+-import io.mockk.coVerify
+-import io.mockk.every
+-import io.mockk.just
+-import io.mockk.mockk
+-import io.mockk.runs
+-import io.mockk.unmockkAll
+-import io.mockk.verify
+-import kotlinx.coroutines.CoroutineScope
+-import kotlinx.coroutines.flow.MutableSharedFlow
+-import kotlinx.coroutines.test.advanceUntilIdle
+-import kotlinx.coroutines.test.runTest
+-import org.junit.Rule
+-import kotlin.test.AfterTest
+-import kotlin.test.BeforeTest
+-import kotlin.test.Test
+-
+-internal class FirebaseMessagingTokenLifecycleObserverTest {
+-
+-    @get:Rule
+-    val dispatcherRule = MainDispatcherRule()
+-    private val testCoroutineScope = CoroutineScope(dispatcherRule.testDispatcher)
+-
+-    private val deviceRegistrationRepository = mockk<DeviceRegistrationRepository>()
+-    private val firebaseMessagingProxy = mockk<FirebaseMessagingProxy>()
+-    private val firebaseNotificationsTokenChannel = mockk<FirebaseNotificationsTokenChannel>()
+-
+-    private lateinit var observer: FirebaseMessagingTokenLifecycleObserver
+-
+-    private val lifecycleOwner = mockk<LifecycleOwner>()
+-
+-
+-    @BeforeTest
+-    fun setup() {
+-        observer = FirebaseMessagingTokenLifecycleObserver(
+-            firebaseMessagingProxy,
+-            firebaseNotificationsTokenChannel,
+-            deviceRegistrationRepository,
+-            testCoroutineScope
+-        )
+-    }
+-
+-    @AfterTest
+-    fun teardown() {
+-        unmockkAll()
+-    }
+-
+-    @Test
+-    fun `should collect tokenFlow on onCreate and register device token`() = runTest {
+-        // Given
+-        val testToken = "test_token"
+-        val tokenFlow = MutableSharedFlow<String>()
+-
+-        every { firebaseNotificationsTokenChannel.tokenFlow } returns tokenFlow
+-        coEvery { firebaseMessagingProxy.fetchToken() } returns testToken.right()
+-        coEvery { firebaseNotificationsTokenChannel.sendToken(any()) } just runs
+-        every { deviceRegistrationRepository.registerDeviceToken(testToken) } just runs
+-
+-        // When
+-        observer.onCreate(lifecycleOwner)
+-        tokenFlow.emit(testToken)
+-
+-        advanceUntilIdle()
+-
+-        // Then
+-        coVerify { firebaseNotificationsTokenChannel.sendToken(testToken) }
+-        coVerify { deviceRegistrationRepository.registerDeviceToken(testToken) }
+-    }
+-
+-    @Test
+-    fun `should not register token if it can't be fetched`() = runTest {
+-        // Given
+-        val tokenFlow = MutableSharedFlow<String>()
+-
+-        every { firebaseNotificationsTokenChannel.tokenFlow } returns tokenFlow
+-        coEvery { firebaseMessagingProxy.fetchToken() } returns DataError.Remote.Unknown.left()
+-
+-        // When
+-        observer.onCreate(lifecycleOwner)
+-        advanceUntilIdle()
+-
+-        // Then
+-        coVerify(exactly = 0) { firebaseNotificationsTokenChannel.sendToken(any()) }
+-        verify(exactly = 0) { deviceRegistrationRepository.registerDeviceToken(any()) }
+-    }
+-}
+diff --git a/mail-session/dagger/src/main/kotlin/ch/protonmail/android/mailsession/dagger/MailSessionModule.kt b/mail-session/dagger/src/main/kotlin/ch/protonmail/android/mailsession/dagger/MailSessionModule.kt
+index 6b7a743ae0..8d1d7558f4 100644
+--- a/mail-session/dagger/src/main/kotlin/ch/protonmail/android/mailsession/dagger/MailSessionModule.kt
++++ b/mail-session/dagger/src/main/kotlin/ch/protonmail/android/mailsession/dagger/MailSessionModule.kt
+@@ -26,7 +26,6 @@ import ch.protonmail.android.mailsession.data.initializer.DatabaseLifecycleObser
+ import ch.protonmail.android.mailsession.data.keychain.AndroidKeyChain
+ import ch.protonmail.android.mailsession.data.keychain.KeyChainLocalDataSource
+ import ch.protonmail.android.mailsession.data.keychain.KeyChainLocalDataSourceImpl
+-import ch.protonmail.android.mailsession.data.logging.SentryIssueReporter
+ import ch.protonmail.android.mailsession.data.repository.InMemoryMailSessionRepository
+ import ch.protonmail.android.mailsession.data.repository.MailSessionRepository
+ import ch.protonmail.android.mailsession.data.repository.RustEventLoopRepository
+@@ -106,9 +105,5 @@ object MailSessionModule {
+         @Binds
+         @Singleton
+         fun bindKeyChainLocalDataSource(impl: KeyChainLocalDataSourceImpl): KeyChainLocalDataSource
+-
+-        @Binds
+-        @Singleton
+-        fun bindIssueReporter(impl: SentryIssueReporter): IssueReporter
+     }
+ }
+diff --git a/mail-session/data/build.gradle.kts b/mail-session/data/build.gradle.kts
+index ae8f209efc..c2c4ee11f8 100644
+--- a/mail-session/data/build.gradle.kts
++++ b/mail-session/data/build.gradle.kts
+@@ -55,7 +55,6 @@ dependencies {
+     implementation(libs.proton.core.domain)
+     implementation(libs.proton.core.network.domain)
+     implementation(libs.proton.core.utilAndroidDevice)
+-    implementation(libs.sentry)
+ 
+     implementation(project(":mail-featureflags:domain"))
+     implementation(project(":mail-bugreport:domain"))
+diff --git a/mail-session/data/src/main/kotlin/ch/protonmail/android/mailsession/data/logging/SentryIssueReporter.kt b/mail-session/data/src/main/kotlin/ch/protonmail/android/mailsession/data/logging/SentryIssueReporter.kt
+deleted file mode 100644
+index 6aca3f7ef3..0000000000
+--- a/mail-session/data/src/main/kotlin/ch/protonmail/android/mailsession/data/logging/SentryIssueReporter.kt
++++ /dev/null
+@@ -1,72 +0,0 @@
+-/*
+- * Copyright (c) 2025 Proton Technologies AG
+- * This file is part of Proton Technologies AG and Proton Mail.
+- *
+- * Proton Mail is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation, either version 3 of the License, or
+- * (at your option) any later version.
+- *
+- * Proton Mail is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with Proton Mail. If not, see <https://www.gnu.org/licenses/>.
+- */
+-
+-package ch.protonmail.android.mailsession.data.logging
+-
+-import io.sentry.Sentry
+-import io.sentry.SentryEvent
+-import io.sentry.SentryLevel
+-import io.sentry.protocol.Message
+-import io.sentry.protocol.User
+-import uniffi.proton_issue_reporter_service_uniffi.IssueLevel
+-import uniffi.proton_issue_reporter_service_uniffi.IssueReporter
+-import javax.inject.Inject
+-
+-class SentryIssueReporter @Inject constructor() : IssueReporter {
+-
+-
+-    override fun report(
+-        level: IssueLevel,
+-        userId: String?,
+-        message: String,
+-        keys: Map<String, String>
+-    ) {
+-        reportToSentry(level, message, keys, userId)
+-    }
+-
+-    private fun reportToSentry(
+-        level: IssueLevel,
+-        message: String,
+-        keys: Map<String, String>,
+-        userId: String? = null
+-    ) {
+-        val event = SentryEvent()
+-        event.level = level.toSentryLevel()
+-        event.message = message.toSentryMessage()
+-        keys.forEach { key, value -> event.setExtra(key, value) }
+-
+-        Sentry.captureEvent(event) { scope ->
+-            userId?.let {
+-                val user = User().apply { id = userId }
+-                scope.user = user
+-            }
+-        }
+-    }
+-
+-    private fun IssueLevel.toSentryLevel() = when (this) {
+-        IssueLevel.CRITICAL -> SentryLevel.ERROR
+-        IssueLevel.ERROR -> SentryLevel.ERROR
+-        IssueLevel.WARNING -> SentryLevel.WARNING
+-    }
+-
+-    private fun String.toSentryMessage(): Message {
+-        val sentryMessage = Message()
+-        sentryMessage.message = this
+-        return sentryMessage
+-    }
+-}
+diff --git a/scripts/run_firebase_ui_tests.sh b/scripts/run_firebase_ui_tests.sh
+deleted file mode 100755
+index 39889f2e79..0000000000
+--- a/scripts/run_firebase_ui_tests.sh
++++ /dev/null
+@@ -1,70 +0,0 @@
+-#
+-# Copyright (c) 2022 Proton Technologies AG
+-# This file is part of Proton Technologies AG and Proton Mail.
+-#
+-# Proton Mail is free software: you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation, either version 3 of the License, or
+-# (at your option) any later version.
+-#
+-# Proton Mail is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+-# GNU General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with Proton Mail. If not, see <https://www.gnu.org/licenses/>.
+-#
+-
+-#!/bin/bash
+-
+-set -e
+-
+-case $1 in
+-
+-'smoke-test')
+-  device_config=smokeTest
+-  shards=2
+-  flaky_attempts=1
+-  test_targets='filter ch.protonmail.android.uitest.filters.SmokeTestFilter'
+-  timeout=15m
+-  ;;
+-
+-'full-regression-test')
+-  device_config=fullTest
+-  shards=4
+-  flaky_attempts=1
+-  test_targets='filter ch.protonmail.android.uitest.filters.FullRegressionTestFilter'
+-  timeout=45m
+-  ;;
+-
+-'core-libs-test')
+-  device_config=smokeTest
+-  shards=1
+-  flaky_attempts=0
+-  test_targets='filter ch.protonmail.android.uitest.filters.CoreLibraryTestFilter'
+-  timeout=20m
+-  ;;
+-
+-'rust-test')
+-  device_config=smokeTest
+-  shards=2
+-  flaky_attempts=1
+-  test_targets='filter ch.protonmail.android.uitest.filters.RustReadyTestFilter'
+-  timeout=15m
+-  ;;
+-*)
+-  printf 'Invalid argument, specify a valid test suite.'
+-  exit 1
+-esac
+-
+-echo "Y" | gcloud beta --quiet firebase test android run ../firebase-device-config.yml:"$device_config" \
+-  --app ../app/build/outputs/apk/dev/debug/app-dev-debug.apk \
+-  --test ../app/build/outputs/apk/androidTest/dev/debug/app-dev-debug-androidTest.apk \
+-  --test-targets "$test_targets" \
+-  --use-orchestrator \
+-  --environment-variables clearPackageData=true \
+-  --num-flaky-test-attempts=$flaky_attempts \
+-  --num-uniform-shards=$shards \
+-  --timeout "$timeout" \
+-  --no-auto-google-login
+diff --git a/scripts/setup_firebase_gcloud.sh b/scripts/setup_firebase_gcloud.sh
+deleted file mode 100755
+index 79e10ac096..0000000000
+--- a/scripts/setup_firebase_gcloud.sh
++++ /dev/null
+@@ -1,38 +0,0 @@
+-#
+-# Copyright (c) 2022 Proton Technologies AG
+-# This file is part of Proton Technologies AG and Proton Mail.
+-#
+-# Proton Mail is free software: you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation, either version 3 of the License, or
+-# (at your option) any later version.
+-#
+-# Proton Mail is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+-# GNU General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with Proton Mail. If not, see <https://www.gnu.org/licenses/>.
+-#
+-
+-#!/bin/bash
+-
+-set -e
+-
+-# Install gcloud client if not already installed
+-which gcloud
+-if [ $? != 0 ]; then
+-  echo "Installing gcloud client"
+-  wget --quiet --output-document=/tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/google-cloud-sdk.tar.gz
+-  mkdir -p /opt
+-  tar zxf /tmp/google-cloud-sdk.tar.gz --directory /opt
+-  /opt/google-cloud-sdk/install.sh --quiet
+-  source /opt/google-cloud-sdk/path.bash.inc
+-  gcloud components update
+-fi
+-
+-# Prepares gcloud client to interact with ProtonMail firebase project
+-gcloud config set project $CLOUD_PROJECT_ID_MAIL
+-echo $SERVICE_ACCOUNT_MAIL > /tmp/service-account.json
+-gcloud auth activate-service-account --key-file /tmp/service-account.json
+diff --git a/scripts/setup_google_services.sh b/scripts/setup_google_services.sh
+deleted file mode 100755
+index 4fa35c4975..0000000000
+--- a/scripts/setup_google_services.sh
++++ /dev/null
+@@ -1,30 +0,0 @@
+-#
+-# Copyright (c) 2022 Proton Technologies AG
+-# This file is part of Proton Technologies AG and Proton Mail.
+-#
+-# Proton Mail is free software: you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation, either version 3 of the License, or
+-# (at your option) any later version.
+-#
+-# Proton Mail is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+-# GNU General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with Proton Mail. If not, see <https://www.gnu.org/licenses/>.
+-#
+-
+-#!/bin/bash
+-
+-set -e
+-
+-function copy_google_services_json() {
+-  if [ ! -f app/google-services.json ]; then
+-    printf "Copying dummy google-services.json file\n"
+-    cp "config/google-services/dummy-google-services.json" "app/google-services.json"
+-  fi
+-}
+-
+-copy_google_services_json
+diff --git a/shared/core/payment-google/data/src/main/kotlin/me/proton/android/core/payment/google/data/GoogleServicesUtilsImpl.kt b/shared/core/payment-google/data/src/main/kotlin/me/proton/android/core/payment/google/data/GoogleServicesUtilsImpl.kt
+deleted file mode 100644
+index aa7fbd9ade..0000000000
+--- a/shared/core/payment-google/data/src/main/kotlin/me/proton/android/core/payment/google/data/GoogleServicesUtilsImpl.kt
++++ /dev/null
+@@ -1,49 +0,0 @@
+-/*
+- * Copyright (c) 2025 Proton Technologies AG
+- * This file is part of Proton Technologies AG and Proton Mail.
+- *
+- * Proton Mail is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation, either version 3 of the License, or
+- * (at your option) any later version.
+- *
+- * Proton Mail is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with Proton Mail. If not, see <https://www.gnu.org/licenses/>.
+- */
+-
+-package me.proton.android.core.payment.google.data
+-
+-import android.content.Context
+-import com.google.android.gms.common.ConnectionResult.SERVICE_DISABLED
+-import com.google.android.gms.common.ConnectionResult.SERVICE_INVALID
+-import com.google.android.gms.common.ConnectionResult.SERVICE_MISSING
+-import com.google.android.gms.common.ConnectionResult.SERVICE_UPDATING
+-import com.google.android.gms.common.ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED
+-import com.google.android.gms.common.ConnectionResult.SUCCESS
+-import com.google.android.gms.common.GoogleApiAvailability
+-import dagger.hilt.android.qualifiers.ApplicationContext
+-import me.proton.android.core.payment.google.domain.GoogleServicesAvailability
+-import me.proton.android.core.payment.google.domain.GoogleServicesUtils
+-import javax.inject.Inject
+-
+-public class GoogleServicesUtilsImpl @Inject constructor(
+-    @ApplicationContext private val context: Context
+-) : GoogleServicesUtils {
+-    override fun getApkVersion(): Int = GoogleApiAvailability.getInstance().getApkVersion(context)
+-
+-    override fun getPlayServicesAvailability(): GoogleServicesAvailability =
+-        when (GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context)) {
+-            SUCCESS -> GoogleServicesAvailability.Success
+-            SERVICE_MISSING -> GoogleServicesAvailability.ServiceMissing
+-            SERVICE_UPDATING -> GoogleServicesAvailability.ServiceUpdating
+-            SERVICE_VERSION_UPDATE_REQUIRED -> GoogleServicesAvailability.ServiceVersionUpdateRequired
+-            SERVICE_DISABLED -> GoogleServicesAvailability.ServiceDisabled
+-            SERVICE_INVALID -> GoogleServicesAvailability.ServiceInvalid
+-            else -> GoogleServicesAvailability.Unexpected
+-        }
+-}
+diff --git a/shared/core/payment-google/domain/src/main/kotlin/me/proton/android/core/payment/google/domain/GoogleServicesUtils.kt b/shared/core/payment-google/domain/src/main/kotlin/me/proton/android/core/payment/google/domain/GoogleServicesUtils.kt
+deleted file mode 100644
+index 52b0110f2d..0000000000
+--- a/shared/core/payment-google/domain/src/main/kotlin/me/proton/android/core/payment/google/domain/GoogleServicesUtils.kt
++++ /dev/null
+@@ -1,35 +0,0 @@
+-/*
+- * Copyright (c) 2025 Proton Technologies AG
+- * This file is part of Proton Technologies AG and Proton Mail.
+- *
+- * Proton Mail is free software: you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation, either version 3 of the License, or
+- * (at your option) any later version.
+- *
+- * Proton Mail is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with Proton Mail. If not, see <https://www.gnu.org/licenses/>.
+- */
+-
+-package me.proton.android.core.payment.google.domain
+-
+-public interface GoogleServicesUtils {
+-    public fun getApkVersion(): Int
+-    public fun getPlayServicesAvailability(): GoogleServicesAvailability
+-}
+-
+-public enum class GoogleServicesAvailability {
+-    Success,
+-    ServiceMissing,
+-    ServiceUpdating,
+-    ServiceVersionUpdateRequired,
+-    ServiceDisabled,
+-    ServiceInvalid,
+-    Unknown,
+-    Unexpected
+-}
