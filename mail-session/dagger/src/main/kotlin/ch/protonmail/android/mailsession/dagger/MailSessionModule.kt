@@ -26,7 +26,6 @@ import ch.protonmail.android.mailsession.data.initializer.DatabaseLifecycleObser
 import ch.protonmail.android.mailsession.data.keychain.AndroidKeyChain
 import ch.protonmail.android.mailsession.data.keychain.KeyChainLocalDataSource
 import ch.protonmail.android.mailsession.data.keychain.KeyChainLocalDataSourceImpl
-import ch.protonmail.android.mailsession.data.logging.SentryIssueReporter
 import ch.protonmail.android.mailsession.data.repository.InMemoryMailSessionRepository
 import ch.protonmail.android.mailsession.data.repository.MailSessionRepository
 import ch.protonmail.android.mailsession.data.repository.RustEventLoopRepository
@@ -106,9 +105,5 @@ object MailSessionModule {
         @Binds
         @Singleton
         fun bindKeyChainLocalDataSource(impl: KeyChainLocalDataSourceImpl): KeyChainLocalDataSource
-
-        @Binds
-        @Singleton
-        fun bindIssueReporter(impl: SentryIssueReporter): IssueReporter
     }
 }
