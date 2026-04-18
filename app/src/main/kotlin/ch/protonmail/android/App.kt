@@ -54,9 +54,6 @@ internal class App : Application() {
     lateinit var databaseLifecycleObserver: Provider<DatabaseLifecycleObserver>
 
     @Inject
-    lateinit var firebaseLifecycleObserver: Provider<FirebaseMessagingTokenLifecycleObserver>
-
-    @Inject
     lateinit var eventLoopLifecycleObserver: Provider<RustEventLoopErrorLifecycleObserver>
 
     @Inject
@@ -79,7 +76,6 @@ internal class App : Application() {
 
         addLogsFileHandlerObserver()
         addDatabaseObserver()
-        addFirebaseTokenLifecycleObserver()
         addEventLoopObserver()
         addAppOpenLifecycleObserver()
 
@@ -94,10 +90,6 @@ internal class App : Application() {
 
     private fun addDatabaseObserver() {
         ProcessLifecycleOwner.get().lifecycle.addObserver(databaseLifecycleObserver.get())
-    }
-
-    private fun addFirebaseTokenLifecycleObserver() {
-        ProcessLifecycleOwner.get().lifecycle.addObserver(firebaseLifecycleObserver.get())
     }
 
     private fun addEventLoopObserver() {

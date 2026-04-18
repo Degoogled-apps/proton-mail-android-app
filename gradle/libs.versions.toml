@@ -1,8 +1,6 @@
 [versions]
 android-gradle-plugin = "8.13.2"
-google-services-plugin = "4.4.4"
 proton-core-plugin = "1.3.0"
-sentry-gradle-plugin = "5.12.2"
 
 accompanist-webview = "0.30.1"
 accompanist-permissions = "0.37.3"
@@ -50,7 +48,6 @@ cash-turbine = "1.2.1"
 coil = "2.7.0"
 dagger = "2.57.2"
 detekt = "1.23.8"
-firebase-bom = "34.7.0"
 guava = "33.5.0-jre"
 haze = "1.6.10" # 1.7.1 requires compileSdk=36
 timber = "5.0.1"
@@ -94,8 +91,6 @@ proton-core-global-coverage = { id = "me.proton.core.gradle-plugins.global-cover
 android-tools-build = { module = "com.android.tools.build:gradle", version.ref = "android-gradle-plugin" }
 kotlin-gradle = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 hilt-android-gradle = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "dagger" }
-google-services = { module = "com.google.gms:google-services", version.ref = "google-services-plugin" }
-sentry-gradle = { module = "io.sentry:sentry-android-gradle-plugin", version.ref = "sentry-gradle-plugin" }
 paparazzi-plugin = { module = "app.cash.paparazzi:paparazzi-gradle-plugin", version.ref = "paparazzi" }
 
 # Standard dependencies
@@ -171,8 +166,6 @@ dagger-hilt-core = { module = "com.google.dagger:hilt-core", version.ref = "dagg
 dagger-hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "dagger" }
 detekt-api = { module = "io.gitlab.arturbosch.detekt:detekt-api", version.ref = "detekt" }
 detekt-test = { module = "io.gitlab.arturbosch.detekt:detekt-test", version.ref = "detekt" }
-firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
-firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 javax-inject = { module = "javax.inject:javax.inject", version.ref = "javax-inject" }
 java-jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
@@ -272,8 +265,6 @@ appLibs = [
     "kotlinx-immutableCollections",
     "okhttp",
     "plumber",
-    "sentry",
-    "sentry-compose",
     "proton-core-proguardRules",
     "proton-rust-core"
 ]
